@@ -1,33 +1,33 @@
 mastodon-notifications-sqs
 
-*まだ仮置き*
+* Still temporary placement *
 
-# 機能
-マストドン通知Streamingを監視しAWS SQSへプッシュします。
-複数インスタンス対応しています。
+# Function
+Monitor mastodon notification Streaming and push to AWS SQS.
+Multiple instances are supported.
 
 # setting.yml
-同階層にsetting.ymlを配置します。
-serverConfsはリストで複数指定できます。
+Place setting.yml in the same hierarchy.
+Multiple serverConfs can be specified in the list.
 
 ```yml
-awsRegion: [AWSリージョン]
-queueURL: [SQSエンドポイントURL]
+awsRegion: [AWS Region]
+queueURL: [SQS endpoint URL]
 
 serverConfs:
-  - serverName: [インスタンスの名称(通知時の表示用)]
-    serverURL: [インスタンスのURL(末尾スラッシュなし)]
-    clientID: [マストドンクライアントID(後述)]
-    clientSecret: [マストドンクライアントシークレットキー(後述)]
-    account: [マストドンユーザ名]
-    password: [マストドンパスワード]
+  - serverName: [name of instance - for display at notification]
+    serverURL: [Instance URL - no trailing slash]
+    clientID: [Mustdon client ID - described later]
+    clientSecret: [Mastodon client secret key - described later]
+    account: [Mastodon account name]
+    password: [Mastodon password]
 ```
 
-# マストドンAPI利用の下準備
+# Preparation for using Mastodon API
 
-マストドンサーバに対してクライアントID/シークレットを発行を要求します。
-curlだと以下のように呼び出します。
-内容は適宜修正してください。
+Requests the mastdon server to issue a client ID / secret.
+Call curl as follows.
+Please modify the contents as appropriate.
 
 ```bash
 curl -X POST -sS https://xxxxxxxxxxxxxx/api/v1/apps \

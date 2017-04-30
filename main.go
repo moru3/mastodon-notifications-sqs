@@ -20,14 +20,14 @@ const settingFile = "./setting.yml"
 
 var queueURL string
 
-// Settings サーバ設定ロードセット
+// Settings from yaml
 type Settings struct {
 	AwsRegion   string       `yaml:"awsRegion"`
 	QueueURL    string       `yaml:"queueURL"`
 	ServerConfs []ServerConf `yaml:"serverConfs"`
 }
 
-// ServerConf サーバ設定(yaml)
+// ServerConf mastodon server's setting
 type ServerConf struct {
 	ServerName   string `yaml:"serverName"`
 	ServerURL    string `yaml:"serverURL"`
@@ -37,7 +37,7 @@ type ServerConf struct {
 	Password     string `yaml:"password"`
 }
 
-// 通知型
+// notification struct
 type notification struct {
 	nType       string
 	displayName string
@@ -45,11 +45,11 @@ type notification struct {
 	serverName  string
 }
 
-// SQS接続
+// SQS connection
 var svc *sqs.SQS
 
 func main() {
-	// 設定ファイルのロード
+	// load setting file
 	buf, err := ioutil.ReadFile(settingFile)
 	if err != nil {
 		return
@@ -61,7 +61,7 @@ func main() {
 	}
 	queueURL = s.QueueURL
 
-	// SQSのセットアップ
+	// SQS set up
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(s.AwsRegion)},
 	)
@@ -78,7 +78,7 @@ func main() {
 		go connect(s.ServerConfs[i])
 	}
 
-	// 一生来ない
+	// no reachable
 	wg.Wait()
 }
 
@@ -112,13 +112,13 @@ func connect(conf ServerConf) {
 	select {
 	case <-cnl:
 		log.Println("channel down and restart")
-		connect(conf)
 	}
+	connect(conf)
 }
 
 func watchStream(q chan mastodon.Event, serverName string, c chan bool) {
 	defer func() { c <- true }()
-	//ストリーミングデータを取得
+	// get event stream
 	for e := range q {
 		if t, ok := e.(*mastodon.NotificationEvent); ok {
 			log.Println(t.Notification.Type)
@@ -138,7 +138,7 @@ func watchStream(q chan mastodon.Event, serverName string, c chan bool) {
 	}
 }
 
-// AWS SQSにメッセージをプッシュする
+// push a message to AWS SQS
 func pushMessage(n notification) {
 	pushContent := "[" + n.serverName + "]"
 	switch n.nType {
@@ -158,7 +158,7 @@ func pushMessage(n notification) {
 		DelaySeconds: aws.Int64(1),
 	}
 
-	// 送信
+	// send
 	sqsRes, err := svc.SendMessage(params)
 	if err != nil {
 		log.Fatal("sqs send error : ", err.Error())
@@ -167,7 +167,8 @@ func pushMessage(n notification) {
 	log.Println("send : ", *sqsRes.MessageId)
 }
 
-// mentionのContentはhtmlでくるのでタグを除去（雑）
+// remove xml tags
+// mention event contains HTML tags
 func removeTag(str string) string {
 	rep := regexp.MustCompile(`<("[^"]*"|'[^']*'|[^'">])*>`)
 	str = rep.ReplaceAllString(str, "")
